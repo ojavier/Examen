@@ -12,8 +12,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.myapplication.ui.theme.MyApplicationTheme
-import com.example.myapplication.ui.theme.screens.main.Home
+import com.example.myapplication.presentation.screens.main.Home
+import dagger.hilt.android.AndroidEntryPoint // 👈 Import necesario
 
+@AndroidEntryPoint // 👈 ¡Aquí está!
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
