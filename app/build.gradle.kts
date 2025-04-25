@@ -1,17 +1,21 @@
 plugins {
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.compose)
-    id("com.google.dagger.hilt.android") // 👈 HILT agregado
-    kotlin("kapt") // 👈 Necesario para Hilt
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("com.google.dagger.hilt.android") version "2.48"
+    id("org.jetbrains.kotlin.plugin.compose")
+    kotlin("kapt")
 }
 
 android {
-    namespace = "com.app.examen_practico"
+    namespace = "com.app.examen"
     compileSdk = 35
 
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.11"
+    }
+
     defaultConfig {
-        applicationId = "com.app.examen_practico"
+        applicationId = "com.app.examen"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
@@ -29,26 +33,20 @@ android {
             )
         }
     }
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-
     kotlinOptions {
         jvmTarget = "11"
     }
-
     buildFeatures {
         compose = true
-    }
-
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.3" // o la que tengas en libs.versions.toml
     }
 }
 
 dependencies {
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -64,12 +62,12 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    implementation ("androidx.datastore:datastore-preferences:1.0.0")
+    implementation ("com.google.code.gson:gson:2.10.1")
+    implementation("com.google.dagger:hilt-android:2.48")
+    implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
+    kapt("com.google.dagger:hilt-compiler:2.48")
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-    implementation("com.google.dagger:hilt-android:2.48")
-    kapt("com.google.dagger:hilt-compiler:2.48")
-    implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
-    implementation("androidx.compose.material:material:1.5.3") // ✅ Componente base de Material2
 
 }
-
