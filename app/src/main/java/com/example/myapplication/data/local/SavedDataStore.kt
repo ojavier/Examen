@@ -6,11 +6,11 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.example.myapplication.data.mapper.MapperUtils
 import com.example.myapplication.domain.model.SavedSudokuGame
 import com.google.gson.Gson
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -53,9 +53,10 @@ class SavedGameDataStore @Inject constructor(
     // Función para obtener un juego guardado por su ID
     suspend fun getGame(gameId: String): SavedSudokuGame? {
         val gameKey = stringPreferencesKey("game_${gameId}")
-        val preferences = context.savedGamesDataStore.data.map { it[gameKey] }.firstOrNull()
+        val preferences = context.savedGamesDataStore.data.first()
+        val gameJson = preferences[gameKey]
 
-        return preferences?.let {
+        return gameJson?.let {
             try {
                 gson.fromJson(it, SavedSudokuGame::class.java)
             } catch (e: Exception) {
