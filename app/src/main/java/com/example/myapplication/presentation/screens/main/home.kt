@@ -20,6 +20,8 @@ fun Home(
     viewModel: SudokuViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
+    val isComplete by viewModel.isComplete.collectAsState()
+    val isIncorrect by viewModel.isIncorrect.collectAsState()
 
     // NUEVOS STATES PARA OPCIONES
     var selectedDifficulty by remember { mutableStateOf("easy") }
@@ -54,17 +56,92 @@ fun Home(
 
         Spacer(Modifier.height(16.dp))
 
-        // BOTÓN PARA GENERAR NUEVO PUZZLE
-        Button(
-            onClick = {
-                viewModel.loadPuzzle(difficulty = selectedDifficulty, size = selectedSize)
-            },
-            modifier = Modifier.align(Alignment.CenterHorizontally)
+        // BOTONES DE ACCIÓN
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Generar Puzzle")
+            // BOTÓN PARA REINICIAR PUZZLE ACTUAL
+            Button(
+                onClick = {
+                    viewModel.restartCurrentPuzzle()
+                },
+                modifier = Modifier.padding(end = 8.dp)
+            ) {
+                Text("Reiniciar Puzzle")
+            }
+
+            // BOTÓN PARA GENERAR NUEVO PUZZLE
+            Button(
+                onClick = {
+                    viewModel.loadPuzzle(difficulty = selectedDifficulty, size = selectedSize)
+                }
+            ) {
+                Text("Nuevo Puzzle")
+            }
         }
 
         Spacer(Modifier.height(16.dp))
+
+        // MENSAJE DE COMPLETADO O INCORRECTO
+        if (isComplete) {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        "¡Felicidades! Has completado el Sudoku correctamente",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Button(
+                        onClick = {
+                            viewModel.loadPuzzle(difficulty = selectedDifficulty, size = selectedSize)
+                        }
+                    ) {
+                        Text("Nuevo juego")
+                    }
+                }
+            }
+        } else if (isIncorrect) {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        "Solución incorrecta. Revisa tus respuestas",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Button(
+                        onClick = {
+                            viewModel.resetIncorrectState()
+                        }
+                    ) {
+                        Text("Continuar jugando")
+                    }
+                }
+            }
+        }
 
         // CONTENIDO SEGÚN ESTADO
         when (val currentState = state) {
@@ -76,16 +153,39 @@ fun Home(
 
             is SudokuUiState.Success -> {
                 val puzzleString = currentState.puzzle.puzzle
+                val solutionString = currentState.puzzle.solution
+
+                // Mantener un seguimiento de la corrección de cada celda
+                val correctnessStates = remember(puzzleString) {
+                    mutableStateListOf<Boolean?>().apply {
+                        repeat(puzzleString.length) { add(null) }
+                    }
+                }
 
                 if (!puzzleString.isNullOrEmpty()) {
                     val gridSize = Math.sqrt(puzzleString.length.toDouble()).toInt()
+                    val cellStates = remember(puzzleString, viewModel.userProgress.collectAsState().value) {
+                        mutableStateListOf<String>().apply {
+                            val userProgress = viewModel.userProgress.value
+                            puzzleString.forEachIndexed { index, char ->
+                                if (char != '0' && char != '.') {
+                                    add(char.toString()) // valor fijo del Sudoku
+                                } else {
+                                    // Usar el progreso del usuario si existe, de lo contrario celda vacía
+                                    add(userProgress?.get(index) ?: "")
+                                }
+                            }
+                        }
+                    }
 
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(gridSize),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        items(puzzleString.length) { index ->
-                            val cellValue = puzzleString[index]
+                        items(cellStates.size) { index ->
+                            val originalValue = puzzleString[index]
+                            val userInput = cellStates[index]
+
                             Card(
                                 modifier = Modifier
                                     .aspectRatio(1f)
@@ -95,10 +195,36 @@ fun Home(
                                     contentAlignment = Alignment.Center,
                                     modifier = Modifier.fillMaxSize()
                                 ) {
-                                    Text(
-                                        text = if (cellValue == '0') " " else cellValue.toString(),
-                                        style = MaterialTheme.typography.bodyLarge
-                                    )
+                                    if (originalValue != '0' && originalValue != '.') {
+                                        // Número original, bloqueado
+                                        Text(
+                                            text = originalValue.toString(),
+                                            style = MaterialTheme.typography.bodyLarge
+                                        )
+                                    } else {
+                                        // Celda editable
+                                        TextField(
+                                            value = userInput,
+                                            onValueChange = { newValue ->
+                                                if (newValue.length <= 1 && (newValue.isEmpty() || newValue[0] in '1'..'9')) {
+                                                    cellStates[index] = newValue
+                                                    correctnessStates[index] = if (newValue.isEmpty()) {
+                                                        null
+                                                    } else {
+                                                        newValue[0] == solutionString[index]
+                                                    }
+                                                    viewModel.updateCell(index, newValue)
+                                                }
+                                            },
+                                            singleLine = true,
+                                            textStyle = MaterialTheme.typography.bodyLarge.copy(
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            ),
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .padding(2.dp),
+                                        )
+                                    }
                                 }
                             }
                         }
