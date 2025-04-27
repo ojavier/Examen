@@ -47,7 +47,9 @@ class SudokuRemoteDataSource @Inject constructor(
     }
 
     // Función para convertir la lista anidada a string
-    private fun processNestedListToString(nestedList: List<List<Int>>): String {
-        return nestedList.flatten().joinToString("")
+    private fun processNestedListToString(nestedList: List<List<Int?>>): String {
+        return nestedList.flatten()
+            .joinToString("") { it?.toString() ?: "0" } // Usa "0" para representar vacío
     }
+
 }
