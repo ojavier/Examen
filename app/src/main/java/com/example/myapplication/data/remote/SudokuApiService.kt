@@ -1,15 +1,14 @@
 package com.example.myapplication.data.remote
 
-import retrofit2.Response
+import com.example.myapplication.data.remote.dto.SudokuResponse
 import retrofit2.http.GET
 import retrofit2.http.Query
-import com.example.myapplication.data.remote.dto.SudokuResponse
 
 interface SudokuApiService {
-
-    @GET("sudoku")
+    @GET("sudokugenerate")
     suspend fun getSudokuPuzzle(
-        @Query("difficulty") difficulty: String = "easy",
-        @Query("size") size: Int = 9
-    ): Response<SudokuResponse>
+        @Query("width") width: Int,
+        @Query("height") height: Int,
+        @Query("difficulty") difficulty: String
+    ): SudokuResponse  // Debe devolver SudokuResponse, no SudokuPuzzle
 }
