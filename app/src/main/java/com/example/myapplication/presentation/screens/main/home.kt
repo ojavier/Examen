@@ -22,6 +22,7 @@ fun Home(
 ) {
     val state by viewModel.state.collectAsState()
     val isComplete by viewModel.isComplete.collectAsState()
+    val isIncorrect by viewModel.isIncorrect.collectAsState()
 
     // NUEVOS STATES PARA OPCIONES
     var selectedDifficulty by remember { mutableStateOf("easy") }
@@ -68,7 +69,7 @@ fun Home(
 
         Spacer(Modifier.height(16.dp))
 
-        // MENSAJE DE COMPLETADO
+        // MENSAJE DE COMPLETADO O INCORRECTO
         if (isComplete) {
             Card(
                 colors = CardDefaults.cardColors(
@@ -94,6 +95,34 @@ fun Home(
                         }
                     ) {
                         Text("Nuevo juego")
+                    }
+                }
+            }
+        } else if (isIncorrect) {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        "Solución incorrecta. Revisa tus respuestas",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Button(
+                        onClick = {
+                            viewModel.resetIncorrectState()
+                        }
+                    ) {
+                        Text("Continuar jugando")
                     }
                 }
             }

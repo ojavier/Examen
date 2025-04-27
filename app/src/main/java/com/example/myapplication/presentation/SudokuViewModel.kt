@@ -32,10 +32,15 @@ class SudokuViewModel @Inject constructor(
     private val _isComplete = MutableStateFlow(false)
     val isComplete: StateFlow<Boolean> = _isComplete
 
+    // Nuevo estado para controlar si hay solución incorrecta
+    private val _isIncorrect = MutableStateFlow(false)
+    val isIncorrect: StateFlow<Boolean> = _isIncorrect
+
     fun loadPuzzle(difficulty: String = "medium", size: Int = 9) {
         _state.value = SudokuUiState.Loading
         _userInput.value = null
         _isComplete.value = false
+        _isIncorrect.value = false
         viewModelScope.launch {
             try {
                 val puzzle = getSudokuPuzzleUseCase(
@@ -66,6 +71,11 @@ class SudokuViewModel @Inject constructor(
         currentInput[index] = value
         _userInput.value = currentInput
 
+        // Reset el estado de incorrecto cuando el usuario empieza a modificar de nuevo
+        if (_isIncorrect.value) {
+            _isIncorrect.value = false
+        }
+
         checkCompletion()
     }
 
@@ -75,11 +85,26 @@ class SudokuViewModel @Inject constructor(
 
         if (currentState is SudokuUiState.Success && currentInput != null) {
             val solution = currentState.puzzle.solution
-            val isComplete = currentInput.all { (index, value) ->
-                value.isNotEmpty() && value[0] == solution[index]
-            }
 
-            _isComplete.value = isComplete
+            // Verifica si todas las celdas están llenas
+            val allFilled = currentInput.all { (_, value) -> value.isNotEmpty() }
+
+            if (allFilled) {
+                // Verifica si todas las celdas son correctas
+                val isCorrect = currentInput.all { (index, value) ->
+                    value.isNotEmpty() && value[0] == solution[index]
+                }
+
+                if (isCorrect) {
+                    _isComplete.value = true
+                } else {
+                    _isIncorrect.value = true
+                }
+            }
         }
+    }
+
+    fun resetIncorrectState() {
+        _isIncorrect.value = false
     }
 }
