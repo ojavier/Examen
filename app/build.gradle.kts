@@ -15,7 +15,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.app.examen"
+        applicationId = "com.app.myapplication"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
@@ -70,4 +70,9 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
 
+    // OkHttp
+    implementation("com.squareup.okhttp3:okhttp:4.9.3")
+
+    // Interceptor de OkHttp para el logging
+    implementation("com.squareup.okhttp3:logging-interceptor:4.9.3")
 }
