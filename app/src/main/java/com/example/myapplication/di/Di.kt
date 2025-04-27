@@ -20,7 +20,7 @@ object Di {
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("https://api.api-ninjas.com/v1/")
+            .baseUrl("https://api.api-ninjas.com/v1/")  // La URL base debe ser sin '?'
             .addConverterFactory(GsonConverterFactory.create())
             .client(okHttpClient)
             .build()
