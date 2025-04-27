@@ -8,7 +8,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.Color
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.myapplication.presentation.SudokuUiState
 import com.example.myapplication.presentation.SudokuViewModel
@@ -57,14 +56,30 @@ fun Home(
 
         Spacer(Modifier.height(16.dp))
 
-        // BOTÓN PARA GENERAR NUEVO PUZZLE
-        Button(
-            onClick = {
-                viewModel.loadPuzzle(difficulty = selectedDifficulty, size = selectedSize)
-            },
-            modifier = Modifier.align(Alignment.CenterHorizontally)
+        // BOTONES DE ACCIÓN
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Generar Puzzle")
+            // BOTÓN PARA REINICIAR PUZZLE ACTUAL
+            Button(
+                onClick = {
+                    viewModel.restartCurrentPuzzle()
+                },
+                modifier = Modifier.padding(end = 8.dp)
+            ) {
+                Text("Reiniciar Puzzle")
+            }
+
+            // BOTÓN PARA GENERAR NUEVO PUZZLE
+            Button(
+                onClick = {
+                    viewModel.loadPuzzle(difficulty = selectedDifficulty, size = selectedSize)
+                }
+            ) {
+                Text("Nuevo Puzzle")
+            }
         }
 
         Spacer(Modifier.height(16.dp))
@@ -138,7 +153,7 @@ fun Home(
 
             is SudokuUiState.Success -> {
                 val puzzleString = currentState.puzzle.puzzle
-                val solutionString = currentState.puzzle.solution  // Añadir esta línea
+                val solutionString = currentState.puzzle.solution
 
                 // Mantener un seguimiento de la corrección de cada celda
                 val correctnessStates = remember(puzzleString) {
@@ -149,13 +164,15 @@ fun Home(
 
                 if (!puzzleString.isNullOrEmpty()) {
                     val gridSize = Math.sqrt(puzzleString.length.toDouble()).toInt()
-                    val cellStates = remember(puzzleString) {
+                    val cellStates = remember(puzzleString, viewModel.userProgress.collectAsState().value) {
                         mutableStateListOf<String>().apply {
-                            puzzleString.forEach { char ->
+                            val userProgress = viewModel.userProgress.value
+                            puzzleString.forEachIndexed { index, char ->
                                 if (char != '0' && char != '.') {
                                     add(char.toString()) // valor fijo del Sudoku
                                 } else {
-                                    add("") // celda vacía
+                                    // Usar el progreso del usuario si existe, de lo contrario celda vacía
+                                    add(userProgress?.get(index) ?: "")
                                 }
                             }
                         }
@@ -201,7 +218,7 @@ fun Home(
                                             },
                                             singleLine = true,
                                             textStyle = MaterialTheme.typography.bodyLarge.copy(
-                                                color = MaterialTheme.colorScheme.onSurface // Usa el color normal del tema
+                                                color = MaterialTheme.colorScheme.onSurface
                                             ),
                                             modifier = Modifier
                                                 .fillMaxSize()

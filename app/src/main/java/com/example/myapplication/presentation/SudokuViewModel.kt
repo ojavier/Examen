@@ -36,17 +36,31 @@ class SudokuViewModel @Inject constructor(
     private val _isIncorrect = MutableStateFlow(false)
     val isIncorrect: StateFlow<Boolean> = _isIncorrect
 
+    // Nuevo estado para guardar el progreso del usuario en el puzzle actual
+    private val _userProgress = MutableStateFlow<Map<Int, String>?>(null)
+    val userProgress: StateFlow<Map<Int, String>?> = _userProgress
+
+    // Guardar el puzzle original para poder reiniciarlo
+    private var originalPuzzle: SudokuPuzzle? = null
+
+    init {
+        loadPuzzle()
+    }
+
     fun loadPuzzle(difficulty: String = "medium", size: Int = 9) {
         _state.value = SudokuUiState.Loading
         _userInput.value = null
         _isComplete.value = false
         _isIncorrect.value = false
+        _userProgress.value = null
+
         viewModelScope.launch {
             try {
                 val puzzle = getSudokuPuzzleUseCase(
                     gridSize = size,
                     difficulty = difficulty
                 )
+                originalPuzzle = puzzle
                 _state.value = SudokuUiState.Success(puzzle)
                 // Inicializar userInput con celdas vacías para las editables
                 initUserInput(puzzle.puzzle)
@@ -64,6 +78,7 @@ class SudokuViewModel @Inject constructor(
             }
         }
         _userInput.value = inputMap
+        _userProgress.value = inputMap.toMap()
     }
 
     fun updateCell(index: Int, value: String) {
@@ -71,12 +86,30 @@ class SudokuViewModel @Inject constructor(
         currentInput[index] = value
         _userInput.value = currentInput
 
+        // Actualizar el progreso del usuario
+        val currentProgress = _userProgress.value?.toMutableMap() ?: mutableMapOf()
+        currentProgress[index] = value
+        _userProgress.value = currentProgress
+
         // Reset el estado de incorrecto cuando el usuario empieza a modificar de nuevo
         if (_isIncorrect.value) {
             _isIncorrect.value = false
         }
 
         checkCompletion()
+    }
+
+    fun restartCurrentPuzzle() {
+        originalPuzzle?.let { puzzle ->
+            _isComplete.value = false
+            _isIncorrect.value = false
+
+            // Restaurar el estado con el puzzle original
+            _state.value = SudokuUiState.Success(puzzle)
+
+            // Reiniciar el input del usuario
+            initUserInput(puzzle.puzzle)
+        }
     }
 
     private fun checkCompletion() {
