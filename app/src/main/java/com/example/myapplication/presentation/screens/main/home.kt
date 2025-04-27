@@ -79,13 +79,27 @@ fun Home(
 
                 if (!puzzleString.isNullOrEmpty()) {
                     val gridSize = Math.sqrt(puzzleString.length.toDouble()).toInt()
+                    val cellStates = remember(puzzleString) {
+                        mutableStateListOf<String>().apply {
+                            puzzleString.forEach { char ->
+                                if (char != '0' && char != '.') {
+                                    add(char.toString()) // valor fijo del Sudoku
+                                } else {
+                                    add("") // celda vacía
+                                }
+                            }
+                        }
+                    }
+
 
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(gridSize),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        items(puzzleString.length) { index ->
-                            val cellValue = puzzleString[index]
+                        items(cellStates.size) { index ->
+                            val originalValue = puzzleString[index]
+                            val userInput = cellStates[index]
+
                             Card(
                                 modifier = Modifier
                                     .aspectRatio(1f)
@@ -95,10 +109,29 @@ fun Home(
                                     contentAlignment = Alignment.Center,
                                     modifier = Modifier.fillMaxSize()
                                 ) {
-                                    Text(
-                                        text = if (cellValue == '0') " " else cellValue.toString(),
-                                        style = MaterialTheme.typography.bodyLarge
-                                    )
+                                    if (originalValue != '0' && originalValue != '.') {
+                                        // Número original, bloqueado
+                                        Text(
+                                            text = originalValue.toString(),
+                                            style = MaterialTheme.typography.bodyLarge
+                                        )
+                                    } else {
+                                        // Celda editable
+                                        TextField(
+                                            value = userInput,
+                                            onValueChange = { newValue ->
+                                                // Solo permitir un número entre 1-9
+                                                if (newValue.length <= 1 && (newValue.isEmpty() || newValue[0] in '1'..'9')) {
+                                                    cellStates[index] = newValue
+                                                }
+                                            },
+                                            singleLine = true,
+                                            textStyle = MaterialTheme.typography.bodyLarge,
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .padding(2.dp),
+                                        )
+                                    }
                                 }
                             }
                         }
