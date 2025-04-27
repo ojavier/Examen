@@ -8,6 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.myapplication.presentation.SudokuUiState
 import com.example.myapplication.presentation.SudokuViewModel
@@ -20,6 +21,7 @@ fun Home(
     viewModel: SudokuViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
+    val isComplete by viewModel.isComplete.collectAsState()
 
     // NUEVOS STATES PARA OPCIONES
     var selectedDifficulty by remember { mutableStateOf("easy") }
@@ -66,6 +68,37 @@ fun Home(
 
         Spacer(Modifier.height(16.dp))
 
+        // MENSAJE DE COMPLETADO
+        if (isComplete) {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        "¡Felicidades! Has completado el Sudoku correctamente",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Button(
+                        onClick = {
+                            viewModel.loadPuzzle(difficulty = selectedDifficulty, size = selectedSize)
+                        }
+                    ) {
+                        Text("Nuevo juego")
+                    }
+                }
+            }
+        }
+
         // CONTENIDO SEGÚN ESTADO
         when (val currentState = state) {
             is SudokuUiState.Loading -> {
@@ -76,6 +109,14 @@ fun Home(
 
             is SudokuUiState.Success -> {
                 val puzzleString = currentState.puzzle.puzzle
+                val solutionString = currentState.puzzle.solution  // Añadir esta línea
+
+                // Mantener un seguimiento de la corrección de cada celda
+                val correctnessStates = remember(puzzleString) {
+                    mutableStateListOf<Boolean?>().apply {
+                        repeat(puzzleString.length) { add(null) }
+                    }
+                }
 
                 if (!puzzleString.isNullOrEmpty()) {
                     val gridSize = Math.sqrt(puzzleString.length.toDouble()).toInt()
@@ -90,7 +131,6 @@ fun Home(
                             }
                         }
                     }
-
 
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(gridSize),
@@ -120,13 +160,20 @@ fun Home(
                                         TextField(
                                             value = userInput,
                                             onValueChange = { newValue ->
-                                                // Solo permitir un número entre 1-9
                                                 if (newValue.length <= 1 && (newValue.isEmpty() || newValue[0] in '1'..'9')) {
                                                     cellStates[index] = newValue
+                                                    correctnessStates[index] = if (newValue.isEmpty()) {
+                                                        null
+                                                    } else {
+                                                        newValue[0] == solutionString[index]
+                                                    }
+                                                    viewModel.updateCell(index, newValue)
                                                 }
                                             },
                                             singleLine = true,
-                                            textStyle = MaterialTheme.typography.bodyLarge,
+                                            textStyle = MaterialTheme.typography.bodyLarge.copy(
+                                                color = MaterialTheme.colorScheme.onSurface // Usa el color normal del tema
+                                            ),
                                             modifier = Modifier
                                                 .fillMaxSize()
                                                 .padding(2.dp),
