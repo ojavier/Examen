@@ -28,7 +28,10 @@ class SudokuViewModel @Inject constructor(
         _state.value = SudokuUiState.Loading
         viewModelScope.launch {
             try {
-                val puzzle = getSudokuPuzzleUseCase(difficulty, size)
+                val puzzle = getSudokuPuzzleUseCase(
+                    gridSize = size,
+                    difficulty = difficulty
+                )
                 _state.value = SudokuUiState.Success(puzzle)
             } catch (e: Exception) {
                 _state.value = SudokuUiState.Error(e.message ?: "Error desconocido")
