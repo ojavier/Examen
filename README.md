@@ -3,7 +3,7 @@ Examen TC2007B
 
 ## Información del desarrollador
 - **Nombre:** Oscar Javier Villeda Arteaga
-- **Matrícula:** A
+- **Matrícula:** A0127797
 
 ## Plataforma a desarrollar
 **Aplicación Android nativa** para dispositivos móviles, desarrollada en Kotlin con Jetpack Compose, siguiendo los principios de Clean Architecture y MVVM.
